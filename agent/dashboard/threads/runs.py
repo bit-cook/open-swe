@@ -24,9 +24,9 @@ from agent.dashboard.options import (
 from agent.dashboard.profiles import get_profile
 from agent.dashboard.team_settings import get_team_default_model, get_team_fable_enabled
 from agent.dashboard.threads.access import (
-    _agent_version_metadata,
     _ensure_dashboard_github_token,
-    _resolve_run_email,
+    agent_version_metadata,
+    resolve_run_email,
 )
 from agent.dashboard.threads.summary import (
     _DASHBOARD_SOURCE,
@@ -34,8 +34,8 @@ from agent.dashboard.threads.summary import (
     _metadata_model_id,
     _now_ms,
     _parse_repo,
-    _repo_config_from_metadata,
-    _thread_source,
+    repo_config_from_metadata,
+    thread_source,
 )
 from agent.input_messages import (
     PersonIdentity,
@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 
 _ASSISTANT_ID = "agent"
 # Modes required for the v3 event-stream protocol (`POST …/stream/events`).
-_DASHBOARD_STREAM_MODES: tuple[str, ...] = (
+DASHBOARD_STREAM_MODES: tuple[str, ...] = (
     "values",
     "updates",
     "messages",
@@ -282,14 +282,14 @@ async def _build_dashboard_configurable(
     overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile = profile if profile is not None else await get_profile(login) or {}
-    thread_source = _thread_source(metadata)
+    source = thread_source(metadata)
     configurable: dict[str, Any] = {
         "thread_id": thread_id,
-        "source": thread_source,
+        "source": source,
         "github_login": login,
-        "user_email": await _resolve_run_email(login, profile),
+        "user_email": await resolve_run_email(login, profile),
     }
-    repo_config = _repo_config_from_metadata(metadata)
+    repo_config = repo_config_from_metadata(metadata)
     if repo_config:
         configurable["repo"] = repo_config
     elif metadata.get("repo_explicitly_none") is True:
@@ -612,12 +612,12 @@ async def _enrich_run_start_command(
         run_metadata = {}
     run_metadata = {
         **run_metadata,
-        **_agent_version_metadata(),
+        **agent_version_metadata(),
         "prepare_run_id": prepare_run_id,
     }
 
     params["assistant_id"] = _ASSISTANT_ID
-    params.setdefault("stream_mode", list(_DASHBOARD_STREAM_MODES))
+    params.setdefault("stream_mode", list(DASHBOARD_STREAM_MODES))
     params.setdefault("stream_resumable", True)
     params["config"] = {**client_config, "configurable": merged_configurable}
     params["metadata"] = run_metadata

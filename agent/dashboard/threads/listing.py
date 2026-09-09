@@ -18,13 +18,13 @@ from agent.dashboard.threads.summary import (
     _metadata_string,
     _refresh_latest_run_metadata,
     _thread_id,
-    _thread_is_readable,
     _thread_metadata,
-    _thread_source,
     _thread_summary,
     _thread_timestamp_ms,
     _thread_updated_ms,
     _ThreadSortBy,
+    thread_is_readable,
+    thread_source,
 )
 from agent.utils.json_types import JsonObject, ThreadLike
 from agent.utils.thread_ops import langgraph_client
@@ -121,7 +121,7 @@ def _metadata_matches_filters(
         return False
     if resolved is not None and _is_thread_resolved(metadata) is not resolved:
         return False
-    if source and _thread_source(metadata) != source:
+    if source and thread_source(metadata) != source:
         return False
     if query:
         pull_requests = metadata.get("pull_requests")
@@ -276,7 +276,7 @@ async def _collect_thread_candidates(
                 break
             for thread in batch:
                 metadata = _thread_metadata(thread)
-                if surfaced_only and _thread_source(metadata) not in _SURFACED_SOURCES:
+                if surfaced_only and thread_source(metadata) not in _SURFACED_SOURCES:
                     continue
                 if not _metadata_matches_filters(
                     metadata,
@@ -328,7 +328,7 @@ async def _pinned_thread_summaries(
         except Exception:  # noqa: BLE001
             logger.debug("Could not fetch pinned sidebar thread %s", thread_id, exc_info=True)
             return None
-        if not isinstance(thread, Mapping) or not _thread_is_readable(_thread_metadata(thread)):
+        if not isinstance(thread, Mapping) or not thread_is_readable(_thread_metadata(thread)):
             return None
         return await _summarize_thread(client, thread)
 
